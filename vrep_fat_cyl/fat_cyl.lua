@@ -1,31 +1,40 @@
 -- DO NOT WRITE CODE OUTSIDE OF THE if-then-end SECTIONS BELOW!! (unless the code is a function definition)
 
 if (sim_call_type==sim_childscriptcall_initialization) then
-    handle=simGetObjectHandle('Cylinder')
+    handle=simGetObjectHandle('Cuboid')
     init_pose=io.open("/home/ratnesh/projects/riss/vrep/fat_cyl_child_script/data/init_pose.csv", "w");
     final_pose=io.open("/home/ratnesh/projects/riss/vrep/fat_cyl_child_script/data/final_pose.csv", "w");
-    erlCount=1;
-    -- erlDebug=0;
-    no_of_trials = 100;
+    init_pose_euler=io.open("/home/ratnesh/projects/riss/vrep/fat_cyl_child_script/data/init_pose_euler.csv", "w");
+    final_pose_euler=io.open("/home/ratnesh/projects/riss/vrep/fat_cyl_child_script/data/final_pose_euler.csv", "w");
+
+    count=0;
+    -- debug=0;
+    no_of_trials = 10;
+    threshold = 100*(no_of_trials+1);
+    threshold_final_pose = 100*no_of_trials;
     r2a = 180/math.pi;
 end
 
 
 if (sim_call_type==sim_childscriptcall_actuation) then
-
+    if count < threshold then 
     local position=simGetObjectPosition(handle,-1)
-    local orientation=simGetObjectOrientation(handle,-1)
+    local quaternion=simGetObjectQuaternion(handle,-1)
+    local orientation=simGetObjectOrientation(handle, -1)
 
-    if erlCount < no_of_trials then
-
-        if erlCount ~= 1 then -- no final pose written at the beginning of the simulation 
-           -- if erlDebug == 0 then          
-            final_pose:write(position[1],",",position[2],",",position[3],",",r2a*orientation[1],","
-                ,r2a*orientation[2],",",r2a*orientation[3],"\n")
+    if (count%100==0) then
+        
+        if count ~= 0 then 
+            -- no final pose written at the beginning of the simulation 
+            -- if == 0 then          
+            final_pose:write(count, ".....", position[1], ",", position[2], ",", position[3], ",", quaternion[1], ","
+                , quaternion[2], ",", quaternion[3], ",", quaternion[4], "\n")
+            final_pose_euler:write(position[1], ",", position[2], ",", position[3], ",", r2a*orientation[1], ","
+                , r2a*orientation[2], ",", r2a*orientation[3], "\n")
            -- end
-        end
+         end
 
-        --if erlDebug == 1 then 
+        --if debug == 1 then 
        --       erlFile:write("\n RESET\n");
         --end
 
@@ -33,6 +42,7 @@ if (sim_call_type==sim_childscriptcall_actuation) then
         position[2] =  math.random();
         position[3] =  0.1+math.random();
 
+        --because setting random orientation via euler angles is easier than setting it via random quaternions
         orientation[1] =  math.random(-180,180)*math.pi/180.0;
         orientation[2] =  math.random(-180,180)*math.pi/180.0;
         orientation[3] =  math.random(-180,180)*math.pi/180.0;
@@ -41,25 +51,18 @@ if (sim_call_type==sim_childscriptcall_actuation) then
         simSetObjectOrientation(handle,-1,orientation)
 
         --last value is garbage
-        if erlCount ~= no_of_trials then
-            init_pose:write(position[1],",",position[2],",",position[3],",",r2a*orientation[1],","
-                ,r2a*orientation[2],",",r2a*orientation[3],"\n")
+        if count < threshold_final_pose then
+            init_pose:write(count, ".....", position[1], ",", position[2], ",", position[3], ",", quaternion[1], ","
+                , quaternion[2], ",", quaternion[3], ",", quaternion[4], "\n")
+            init_pose_euler:write(position[1], ",", position[2], ",", position[3], ",", r2a*orientation[1], ","
+                , r2a*orientation[2], ",", r2a*orientation[3], "\n")
+
         end
      
-        
-       -- if erlDebug == 0 then 
-        --    erlFile:write(position[1]," ",position[2]," ",position[3]," ",r2a*orientation[1]," "
-         --      ,r2a*orientation[2]," ",r2a*orientation[3]," ")
-        --end
     end
 
-    --if erlDebug == 1 then
-      --  erlFile:write(position[1]," ",position[2]," ",position[3]," ",r2a*orientation[1]," "
-        --   ,r2a*orientation[2]," ",r2a*orientation[3],"\n")
-    --end
-
-    erlCount = erlCount+1;
-
+    count = count+1;
+end
 end
 
 
